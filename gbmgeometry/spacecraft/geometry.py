@@ -3,8 +3,7 @@ import collections
 import numpy as np
 from matplotlib import colors
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from mpl_toolkits.mplot3d import Axes3D
-from sympy import Plane, Point3D, Line3D
+from sympy import Plane, Point3D, Ray3D, Symbol
 
 
 class Ray(object):
@@ -24,28 +23,29 @@ class Ray(object):
         self._calculate_ray_origin()
 
     def _calculate_ray_origin(self):
-        theta = np.deg2rad(self._point_source.Zen.value)
+        theta = np.deg2rad(90. - self._point_source.Zen.value)
         phi = np.deg2rad(self._point_source.Az.value)
 
         x = Ray._R * np.cos(phi) * np.sin(theta)
         y = Ray._R * np.sin(phi) * np.sin(theta)
         z = Ray._R * np.cos(theta)
 
-        # this is the "distant orgin of the ray"
+        # this is the "distant origin of the ray"
         self._origin = np.array([x, y, z])
 
-        self._sympy_line = Line3D(Point3D(self._detector.mount_point), Point3D(self._origin))
+        self._sympy_line = Ray3D(Point3D(self._detector.mount_point), Point3D(self._origin))
 
+        t = Symbol('t', real=True)
 
+        ap = self._sympy_line.arbitrary_point()
 
-        self._plot_origin = self.point_on_ray(Ray._scale)
+        self._plot_origin = np.array(map(float, ap.subs(t, Ray._scale).evalf().args))
 
     def plot(self, ax):
         ax.plot([self._plot_origin[0], self.detector_origin[0]],
                 [self._plot_origin[1], self.detector_origin[1]],
                 [self._plot_origin[2], self.detector_origin[2]],
-                color=self._color,
-                alpha=0.8)
+                color=self._color)
 
     @property
     def detector_name(self):
@@ -66,19 +66,6 @@ class Ray(object):
     @property
     def sympy_line(self):
         return self._sympy_line
-
-    def point_on_ray(self, t=0.5):
-        """
-        get a parametrized point on the ray
-        
-        :param t: point between 0 and 1
-        :return: 
-        """
-
-        assert 0. <= t <=1., 't must be between 0 and 1'
-
-
-        return self.detector_origin + (self._origin - self.detector_origin) * t
 
 
 class Surface(object):
@@ -198,7 +185,7 @@ class Surface(object):
 
     def _within_x_bounds(self, x):
 
-        if x <= self._xmax and self._xmin <= x:
+        if x <= self._xmax and x >= self._xmin:
 
             return True
 
@@ -208,7 +195,7 @@ class Surface(object):
 
     def _within_y_bounds(self, y):
 
-        if y <= self._ymax and self._ymin <= y:
+        if y <= self._ymax and y >= self._ymin:
 
             return True
 
@@ -218,7 +205,7 @@ class Surface(object):
 
     def _within_z_bounds(self, z):
 
-        if z <= self._zmax and self._zmin <= z:
+        if z <= self._zmax and z >= self._zmin:
 
             return True
 

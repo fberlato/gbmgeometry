@@ -10,23 +10,13 @@ from gbmgeometry.utils.array_to_cmap import array_to_cmap
 from geometry import Ray
 from lat import LAT, LATRadiatorMinus, LATRadiatorPlus
 from solar_panels import SolarPanelMinus, SolarPanelPlus
+from sympy.geometry import Point3D
 
 
 class Fermi(object):
     def __init__(self, quaternion, sc_pos=None):
 
-
-
-        """
-        
-        A model of Fermi that can be plotted in 3D and read healpix maps.
-        
-
-        :param quaternion: the quaternion array 
-        :param sc_pos: the spacecraft position
-        """
-
-        # build fermi by creating all the components
+        # build fermi
 
         self._lat = LAT()
 
@@ -35,8 +25,6 @@ class Fermi(object):
 
         self._solar_panel_plus = SolarPanelPlus()
         self._solar_panel_minus = SolarPanelMinus()
-
-        # build a GBM
 
         self._gbm = GBM(quaternion, sc_pos)
 
@@ -77,12 +65,6 @@ class Fermi(object):
 
     def add_ray(self, ray_coordinate, probability=None, color='#29FC5C'):
 
-        """
-
-        :param ray_coordinate: 
-        :param probability: 
-        :param color: 
-        """
         for name, det in self._gbm.detectors.iteritems():
             ray = Ray(det, ray_coordinate, probability=probability, color=color)
 
@@ -126,7 +108,10 @@ class Fermi(object):
 
                         plane, point, distance = component.intersection
 
-                        if plane is not None:
+                        current_ray_origin = Point3D(ray.ray_origin)
+                        
+			# checks if the occultation point is between the source and the detector
+                        if plane is not None and current_ray_origin.distance(Point3D(point)) <= current_ray_origin.distance(Point3D(ray.detector_origin)):
                             collision_info['surface'].append('%s %s' % (name, plane))
                             collision_info['point'].append(point)
                             collision_info['distance'].append(distance)
@@ -141,14 +126,6 @@ class Fermi(object):
 
     def plot_fermi(self, ax=None, detectors=None, with_rays=False, with_intersections=False):
 
-        """
-
-        :param ax: 
-        :param detectors: 
-        :param with_rays: 
-        :param with_intersections: 
-        :return: 
-        """
         if ax is None:
 
             fig = plt.figure()
@@ -179,8 +156,6 @@ class Fermi(object):
 
         if with_rays:
 
-            # for all the detectors plot the rays
-
             for name, det in self._rays.iteritems():
 
                 if name in detectors:
@@ -189,9 +164,6 @@ class Fermi(object):
                         ray.plot(ax)
 
         if with_intersections:
-
-            # if there are intersections
-            # then plot the intersection points
 
             if self._intersection_points is not None:
 
@@ -220,34 +192,20 @@ class Fermi(object):
 
     def read_healpix_map(self, healpix_map, cmap='viridis'):
 
-        # collect the nside of the map
-
         nside = hp.get_nside(healpix_map)
 
-        # get the colors of the rays based of their values
-
         _, colors = array_to_cmap(healpix_map, cmap=cmap, use_log=False)
-
-        # now go thru all the points on the sphere
 
         for idx, val in enumerate(healpix_map):
 
             if val > 0:
-
-                # if the probability is greater than 0
-                # then we need to get the sky position
-
                 ra, dec = Fermi._pix_to_sky(idx, nside)
-
-                # mark the color
 
                 color = colors[idx]
 
                 # now make a point source
 
                 ps = SkyCoord(ra, dec, unit='deg', frame='icrs')
-
-                # transform into the fermi frame
 
                 ps_fermi = ps.transform_to(frame=self._frame)
 

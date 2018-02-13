@@ -12,7 +12,7 @@ class LAT(Volume):
         x_width = 190.3
         y_width = 190.3
 
-        active_surfaces = ['+x', '-x', '+y', '-y', '+z']
+        active_surfaces = ['-x', '+x', '-y', '+y', '+z']
 
         super(LAT, self).__init__(name='LAT',
                                   x_origin=x_origin,
@@ -21,7 +21,7 @@ class LAT(Volume):
                                   height=height,
                                   x_width=x_width,
                                   y_width=y_width,
-                                  color='#777777',
+                                  color='#421352',
                                   active_surfaces=active_surfaces
                                   )
 
@@ -33,13 +33,13 @@ class LATRadiator(Volume):
         height = 158.6
         z_origin = 158.6 / 2.
         x_origin = 0.
-        y_origin = sign * 96.2
+        y_origin = sign * 96.3
         x_width = 190.3
         y_width = 5.2
 
         super(LATRadiator, self).__init__(name=name,
                                           x_origin=x_origin,
-                                          y_origin=y_origin,
+                                          y_origin=y_origin + sign * y_width/2,
                                           z_origin=z_origin,
                                           height=height,
                                           x_width=x_width,
@@ -51,13 +51,17 @@ class LATRadiator(Volume):
 
 class LATRadiatorMinus(LATRadiator):
     def __init__(self):
-        active_surfaces = ['-x']
+        # if we choose only -y we get consistent results with gbm team script,
+        # however we need to also consider the other surfaces 
+        active_surfaces = ['+x','-x','+y','-z']
 
         super(LATRadiatorMinus, self).__init__('LAT Radiator-', -1, active_surfaces)
 
 
 class LATRadiatorPlus(LATRadiator):
     def __init__(self):
-        active_surfaces = ['+x']
+        # if we choose only +y we get consistent results with gbm team script,
+        # however we need to also consider the other surfaces 
+        active_surfaces = ['+x','-x','-y','-z']
 
         super(LATRadiatorPlus, self).__init__('LAT Radiator+', 1, active_surfaces)
