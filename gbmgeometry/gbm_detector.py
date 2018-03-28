@@ -2,6 +2,7 @@ __author__ = "drjfunk"
 import numpy as np
 from astropy.coordinates import SkyCoord, get_sun, get_body
 from spherical_geometry.polygon import SphericalPolygon
+import astropy.units as u
 
 from .gbm_frame import GBMFrame
 
@@ -20,37 +21,9 @@ class GBMDetector(object):
 
         self.update_position(quaternion, sc_pos, time)
 
-        # self._time = time
-        #
-        # q1, q2, q3, q4 = quaternion
-        #
-        # if sc_pos is not None:
-        #     scx, scy, scz = sc_pos
-        #
-        # else:
-        #     scx = None
-        #     scy = None
-        #     scz = None
-        #
-        # self._center = SkyCoord(Az=self._az, Zen=self._zen, unit='deg',
-        #                         frame=GBMFrame(quaternion_1=q1,
-        #                                        quaternion_2=q2,
-        #                                        quaternion_3=q3,
-        #                                        quaternion_4=q4,
-        #                                        sc_pos_X=scx,
-        #                                        sc_pos_Y=scy,
-        #                                        sc_pos_Z=scz,
-        #                                        ))
-        #
-        #
-        # if self._time is not None:
-        #
-        #     # we can calculate the sun position
-        #     self._sun_position = get_sun(self._time).transform_to(self._center.frame)
-        #
-        #
-        # self._quaternion = quaternion
-        # self._sc_pos = sc_pos
+        self._xyz = np.array([np.cos(self._az)*np.sin(self._zen), np.sin(self._az)*np.sin(self._zen), np.cos(self._zen)])
+
+        
 
 
     def update_position(self, quaternion, sc_pos=None, time=None):
@@ -74,7 +47,9 @@ class GBMDetector(object):
             scy = None
             scz = None
 
-        self._center = SkyCoord(Az=self._az, Zen=self._zen, unit='deg',
+        self._center = SkyCoord(self._az * u.deg,
+                                self._zen * u.deg,
+                                unit='deg',
                                 frame=GBMFrame(quaternion_1=q1,
                                                quaternion_2=q2,
                                                quaternion_3=q3,
@@ -86,8 +61,14 @@ class GBMDetector(object):
 
         if self._time is not None:
             # we can calculate the sun position
-            self._sun_position = get_sun(self._time).transform_to(self._center.frame)
-            self._earth_position = get_body('earth',time=self._time).transform_to(self._center.frame)
+            tmp_sun = get_sun(self._time).icrs
+
+                        
+            self._sun_position = SkyCoord(tmp_sun.ra.deg,tmp_sun.dec.deg,unit='deg', frame='icrs').transform_to(self._center.frame)
+
+            tmp_earth = get_body('earth',time=self._time).icrs
+            
+            self._earth_position = SkyCoord(tmp_earth.ra.deg, tmp_earth.dec.deg, unit='deg', frame='icrs').transform_to(self._center.frame)
 
         self._quaternion = quaternion
         self._sc_pos = sc_pos
@@ -113,8 +94,8 @@ class GBMDetector(object):
             scy = None
             scz = None
 
-        self._center = SkyCoord(Az=self._az,
-                                Zen=self._zen,
+        self._center = SkyCoord(self._az* u.deg,
+                                self._zen * u.deg,
                                 unit='deg',
                                 frame=GBMFrame(quaternion_1=q1,
                                                quaternion_2=q2,
@@ -143,8 +124,8 @@ class GBMDetector(object):
             scy = None
             scz = None
 
-        self._center = SkyCoord(Az=self._az,
-                                Zen=self._zen,
+        self._center = SkyCoord(self._az * u.deg,
+                                self._zen * u.deg,
                                 unit='deg',
                                 frame=GBMFrame(quaternion_1=q1,
                                                quaternion_2=q2,
@@ -168,8 +149,8 @@ class GBMDetector(object):
         if fermi_frame:
             fermi = self._center
 
-            poly = SphericalPolygon.from_cone(fermi.Az.value,
-                                              fermi.Zen.value,
+            poly = SphericalPolygon.from_cone(fermi.lon.value,
+                                              fermi.lat.value,
                                               radius,
                                               steps=steps)
 
@@ -231,6 +212,14 @@ class GBMDetector(object):
 
         return self._zen
 
+    @property
+    def xyz(self):
+
+        return self._xyz
+
+    
+
+    
     @property
     def mount_point(self):
 
