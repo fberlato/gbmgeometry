@@ -1,5 +1,8 @@
 import numpy as np
 
+import matplotlib as mplt
+mplt.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as clrs
 from matplotlib.patches import CirclePolygon
@@ -138,22 +141,43 @@ class Skymap(object):
 		dec_earth = self._earth_circle[1]
 		earth_angular_radius = self._earth_circle[2]
 
-		if (ra_earth+earth_angular_radius <= 2*np.pi) and (ra_earth-earth_angular_radius >= 0):
-			earth_circ = CirclePolygon((ra_earth, dec_earth), earth_angular_radius, resolution=100,	antialiased=True, joinstyle='round', \
-                                                   facecolor=transp_grey, edgecolor=transp_black, linewidth=1.5, zorder=0)
-			ax.add_patch(earth_circ)
-		else:
-			earth_circ1 = CirclePolygon((ra_earth + np.pi, dec_earth), earth_angular_radius, resolution=100, antialiased=True, joinstyle='round', \
-                                                    facecolor=transp_grey, edgecolor=transp_black, linewidth=1.5, zorder=0)
-			ax.add_patch(earth_circ1)
 
-			earth_circ2 = CirclePolygon((ra_earth - np.pi, dec_earth), earth_angular_radius, resolution=100, antialiased=True, joinstyle='round', \
+                if (ra_earth+earth_angular_radius <= 2*np.pi and ra_earth-earth_angular_radius>= 0.):
+
+                        earth_circ = CirclePolygon( (-(ra_earth-np.pi), dec_earth), earth_angular_radius,\
+                                                   resolution=100, antialiased=True, joinstyle='round', facecolor=transp_grey, \
+                                                   edgecolor=transp_black, linewidth=1.5, zorder=0)
+                        ax.add_patch(earth_circ)
+
+                elif ra_earth+earth_angular_radius > 2*np.pi:
+
+                        earth_circ1 = CirclePolygon( (-(ra_earth-np.pi), dec_earth), earth_angular_radius, \
+                                                    resolution=100, antialiased=True, joinstyle='round', facecolor=transp_grey, \
+                                                    edgecolor=transp_black, linewidth=1.5, zorder=0)
+                        ax.add_patch(earth_circ1)
+
+                        earth_circ2 = CirclePolygon( (-(ra_earth-np.pi-2*np.pi), dec_earth), earth_angular_radius, \
+                                                     resolution=100, antialiased=True, joinstyle='round',\
                                                     facecolor=transp_grey, edgecolor=transp_black, linewidth=1.5, zorder=0)
-			ax.add_patch(earth_circ2)
+                        ax.add_patch(earth_circ2)
+
+                elif ra_earth-earth_angular_radius < 0.:
+
+                        earth_circ1 = CirclePolygon( (-(ra_earth-np.pi), dec_earth), earth_angular_radius, \
+                                                    resolution=100, antialiased=True, joinstyle='round', facecolor=transp_grey, \
+                                                    edgecolor=transp_black, linewidth=1.5, zorder=0)
+                        ax.add_patch(earth_circ1)
+
+                        earth_circ2 = CirclePolygon( (-(ra_earth-np.pi+2*np.pi), dec_earth), earth_angular_radius, \
+                                      resolution=100, antialiased=True, joinstyle='round',\
+                                        facecolor=transp_grey, edgecolor=transp_black, linewidth=1.5, zorder=0)
+                        ax.add_patch(earth_circ2)
+        
 
 
                 
-		ax.set_xticklabels(['330$^\circ$','300$^\circ$','270$^\circ$','240$^\circ$','210$^\circ$','180$^\circ$','150$^\circ$','120$^\circ$','90$^\circ$','60$^\circ$','30$^\circ$'])
+		ax.set_xticklabels(['330$^\circ$','300$^\circ$','270$^\circ$','240$^\circ$','210$^\circ$','180$^\circ$','150$^\circ$',\
+                                    '120$^\circ$','90$^\circ$','60$^\circ$','30$^\circ$'])
 		ax.grid(zorder=2)
 
 		handles, labels = ax.get_legend_handles_labels()
@@ -184,9 +208,9 @@ class Skymap(object):
 		#get detector position with respect to the earth frame
 		dets.set_sc_pos(trig_reader._sc_pos[trigger_time_pos]*un.km)
 
-		xyz_position = SkyCoord(x=dets._sc_pos[0],
-                                y=dets._sc_pos[1],
-                                z=dets._sc_pos[2],
+		xyz_position = SkyCoord(x=-dets._sc_pos[0],
+                                y=-dets._sc_pos[1],
+                                z=-dets._sc_pos[2],
                                 frame='icrs',
                                 representation='cartesian')
 
@@ -198,7 +222,7 @@ class Skymap(object):
 		#earth angular radius in radians
 		earth_angular_radius = np.pi/2 - np.arccos(6371/np.sqrt((df**2).sum()) )
 
-		return np.array([np.radians(-ra_earth + 180.), np.radians(dec_earth), earth_angular_radius])
+		return np.array([np.radians(ra_earth), np.radians(dec_earth), earth_angular_radius])
 
 
 	def _get_probability_array(self, pix):
