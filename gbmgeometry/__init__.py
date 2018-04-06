@@ -6,7 +6,7 @@ from gbm_frame import GBMFrame
 from getgbmdata import GetGBMData
 from position_interpolator import PositionInterpolator
 from spacecraft.fermi import Fermi
-from skymap.skymap import Skymap
+#from skymap.skymap import Skymap
 
 
 gbm_detector_list = {'n0' : NaI0,
