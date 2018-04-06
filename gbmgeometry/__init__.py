@@ -53,6 +53,5 @@ __all__ = ["GBMFrame",
            "GetGBMData",
            "Fermi",
            "GBMTime",
-           "gbm_detector_list",
-           "Skymap"
+           "gbm_detector_list"
            ]
